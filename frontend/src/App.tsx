@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { Header } from "./components/Header";
 import { UserProfile } from "./components/UserProfile";
 import { SkillBrowser } from "./components/SkillBrowser";
@@ -127,6 +129,17 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header currentUser={currentUser} notifications={notifications} />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
 
       <main className="py-4 sm:py-8">
         <Routes>

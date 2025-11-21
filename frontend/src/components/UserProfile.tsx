@@ -41,13 +41,20 @@ export const UserProfile: React.FC<UserProfileProps> = ({
   const { loading, error } = useSelector((state: RootState) => state.auth);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editedUser, setEditedUser] = useState(user);
+  // make a shallow copy of user and ensure arrays exist to avoid runtime errors
+  const makeSafeUser = (u: UserType) => ({
+    ...u,
+    skillsOffered: u.skillsOffered ?? [],
+    skillsWanted: u.skillsWanted ?? [],
+    availability: u.availability ?? [],
+  });
+  const [editedUser, setEditedUser] = useState<UserType>(makeSafeUser(user));
   const [newSkillOffered, setNewSkillOffered] = useState("");
   const [newSkillWanted, setNewSkillWanted] = useState("");
 
   // Update editedUser when user prop changes
   useEffect(() => {
-    setEditedUser(user);
+    setEditedUser(makeSafeUser(user));
   }, [user]);
 
   const handleSave = async () => {
@@ -74,13 +81,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({
     }
   };
 
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedUser(makeSafeUser(user));
+  };
+
   const addSkill = (type: "offered" | "wanted") => {
     const newSkill = type === "offered" ? newSkillOffered : newSkillWanted;
     if (newSkill.trim()) {
       const skillsKey = type === "offered" ? "skillsOffered" : "skillsWanted";
       setEditedUser({
         ...editedUser,
-        [skillsKey]: [...editedUser[skillsKey], newSkill.trim()],
+        [skillsKey]: [...(editedUser[skillsKey] ?? []), newSkill.trim()],
       });
       if (type === "offered") setNewSkillOffered("");
       else setNewSkillWanted("");
@@ -187,7 +199,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <Star size={24} className="text-yellow-500 fill-current" />
                 <span className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {user.rating.toFixed(1)}
+                  {(user.rating ?? 0).toFixed(1)}
                 </span>
               </div>
               <div className="text-sm font-medium text-gray-600">Average Rating</div>
@@ -196,7 +208,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <Sparkles className="text-gray-600" size={24} />
                 <span className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {user.skillsOffered.length}
+                  {(editedUser.skillsOffered?.length ?? 0)}
                 </span>
               </div>
               <div className="text-sm font-medium text-gray-600">Skills Offered</div>
@@ -217,7 +229,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     onChange={(e) => setNewSkillOffered(e.target.value)}
                     placeholder="Add a skill"
                     className="w-48"
-                    onKeyPress={(e) => e.key === 'Enter' && addSkill('offered')}
+                    onKeyDown={(e) => (e.key === "Enter" ? addSkill("offered") : null)}
                   />
                   <Button size="sm" onClick={() => addSkill('offered')}>
                     <Plus size={16} />
@@ -255,7 +267,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
                     onChange={(e) => setNewSkillWanted(e.target.value)}
                     placeholder="Add a skill"
                     className="w-48"
-                    onKeyPress={(e) => e.key === 'Enter' && addSkill('wanted')}
+                    onKeyDown={(e) => (e.key === "Enter" ? addSkill("wanted") : null)}
                   />
                   <Button size="sm" onClick={() => addSkill('wanted')}>
                     <Plus size={16} />
@@ -286,7 +298,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Availability</h3>
             <div className="flex flex-wrap gap-2">
-              {editedUser.availability.map((time, index) => (
+              {(editedUser.availability ?? []).map((time, index) => (
                 <Badge key={index} variant="secondary" className="bg-green-100 text-green-800">
                   <Clock size={12} className="mr-1" />
                   {time}
@@ -325,7 +337,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({
             <div className="flex justify-end space-x-2 pt-4">
               {isEditing ? (
                 <>
-                  <Button variant="outline" onClick={() => setIsEditing(false)}>
+                  <Button variant="outline" onClick={handleCancelEdit}>
                     Cancel
                   </Button>
                   <Button onClick={handleSave} disabled={loading}>

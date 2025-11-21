@@ -3,9 +3,10 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/database");
 
+
 // Load env vars
 dotenv.config();
-
+ 
 // Connect to DB
 connectDB();
 
@@ -22,6 +23,7 @@ const swapRoutes = require("./routes/swaps");
 const feedbackRoutes = require("./routes/feedback");
 const adminRoutes = require("./routes/admin");
 
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/swaps", swapRoutes);
@@ -32,6 +34,7 @@ app.use("/api/admin", adminRoutes);
 app.get("/", (req, res) => {
   res.send("🌐 SkillSwap API is running...");
 });
+
 
 // Listen
 const PORT = process.env.PORT || 5000;

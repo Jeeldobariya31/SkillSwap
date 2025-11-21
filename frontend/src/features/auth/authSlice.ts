@@ -5,6 +5,7 @@ import {
   getCurrentUser,
   updateUser as updateUserApi,
   getUserById,
+  deleteUser as deleteUserApi,
   UpdateUserData,
 } from "../../services/userService";
 
@@ -69,6 +70,36 @@ export const loginUser = createAsyncThunk(
     } catch (err: unknown) {
       const error = err as ApiError;
       return rejectWithValue(error.response?.data?.message || "Login failed");
+    }
+  },
+);
+
+export const logoutUser = createAsyncThunk(
+  "auth/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (!refreshToken) {
+        return rejectWithValue("No refresh token found");
+      }
+      const res = await api.post("/auth/logout", { refreshToken });
+      return res.data;
+    } catch (err: unknown) {
+      const error = err as ApiError;
+      return rejectWithValue(error.response?.data?.message || "Logout failed");
+    }
+  },
+);
+
+export const deleteUser = createAsyncThunk(
+  "auth/deleteUser",
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      await deleteUserApi(userId);
+      return userId;
+    } catch (err: unknown) {
+      const error = err as ApiError;
+      return rejectWithValue(error.response?.data?.message || "Failed to delete account");
     }
   },
 );
@@ -143,6 +174,7 @@ const authSlice = createSlice({
       state.token = null;
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      localStorage.removeItem("refreshToken");
     },
     setCredentials(state, action) {
       state.user = action.payload.user;
@@ -176,8 +208,43 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         localStorage.setItem("token", action.payload.token);
         localStorage.setItem("user", JSON.stringify(action.payload.user));
+        if (action.payload.refreshToken) {
+          localStorage.setItem("refreshToken", action.payload.refreshToken);
+        }
       })
       .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(logoutUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.token = null;
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("refreshToken");
+      })
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(deleteUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteUser.fulfilled, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.token = null;
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("refreshToken");
+      })
+      .addCase(deleteUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })

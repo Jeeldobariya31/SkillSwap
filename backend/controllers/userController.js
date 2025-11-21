@@ -1,5 +1,5 @@
 const User = require("../models/User");
-
+const { sendEmail } = require("../utils/mail");
 // GET /api/users - Get all users (with optional filters)
 exports.getAllUsers = async (req, res) => {
   try {
@@ -43,7 +43,60 @@ exports.updateUser = async (req, res) => {
 // DELETE /api/users/:id - Delete account (admin or owner)
 exports.deleteUser = async (req, res) => {
   try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     await User.findByIdAndDelete(req.params.id);
+
+    await sendEmail({
+      to: user.email,
+      subject: "Account Deleted - SkillSwap",
+      html: `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+  </head>
+  <body style="font-family:Arial,Helvetica,sans-serif;background:#f6f9fc;margin:0;padding:40px;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        <td align="center">
+          <table width="500" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;border-radius:8px;overflow:hidden;">
+            
+            <tr>
+              <td style="padding:24px;text-align:center;background:#333;color:#fff;">
+                <h1 style="margin:0;font-size:22px;">SkillSwap</h1>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:25px;color:#000;text-align:left;">
+                <p style="margin:0 0 12px;font-size:15px;">Hello ${user.name},</p>
+
+                <h2 style="margin:0 0 8px;font-size:18px;text-align:left;">Account Deleted</h2>
+
+                <p style="margin:0;font-size:14px;color:#444;">
+                  Your SkillSwap account has been deleted successfully. We’re sorry to see you go.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:14px;text-align:center;font-size:12px;color:#999;background:#fafafa;">
+                SkillSwap Team
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`,
+    });
     res.json({ message: "User deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });
